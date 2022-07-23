@@ -33,7 +33,7 @@ TODO: add environment setup review
 
 ### Python Knowledge List
 
-I'm not going to waste your time, here are the essentials
+I won't waste your time, here are the essentials...
 >>>
 Know already
 - Variables
@@ -47,11 +47,13 @@ Know already
 - Jupyter Notebooks
 - Numpy
 - Pandas
+
 Learn now
 - List Comprehension (saves a LOT of your time and effort, very easy to read)
 - Classes and Object Oriented Programming (not covered in bus721, great for portfolio rebalancing)
 - More numpy
 - More pandas
+
 If you feel ambitious
 - Iterators and Generators (generators are used for retrieving stock data in ib_insync)
 - Async IO (ib_insync uses this behind the scenes, understanding asynchronous programming is generally useful)
