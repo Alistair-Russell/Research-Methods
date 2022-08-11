@@ -1,10 +1,10 @@
-# BUS 989 COURSE NAME
+# BUS 989 Research Methods II
 
 [[_TOC_]]
 
 ## Introduction
 
-BUS989 trading assignments make use of common python libraries (e.g. numpy, pandas) as well as the ib_insync library for trading through Interactive Brokers (IBKR) with a paper trading account. Do not use a live IBKR account for this... I
+BUS989 trading assignments make use of common python libraries (e.g. numpy, pandas) as well as the ib_insync library for trading through Interactive Brokers (IBKR) with a paper trading account. Do not use a live IBKR account for this...
 
 ## Getting started
 
@@ -61,10 +61,10 @@ If you feel ambitious
 >>>
 
 ### Jupyter
-TODO: add jupyter tips and tricks
+[See jupyter tutorials](./tutorials/jupyter)
 
 ## Assignments
-TODO: add assignments
+[See assignments](./assignments)
 
 ## Authors and acknowledgment
 Alistair Russell (apr4@sfu.ca)
