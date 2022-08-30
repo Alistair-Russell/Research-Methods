@@ -32,7 +32,6 @@ There are several tutorials included in this repository that provide some guidan
 TODO: add environment setup review
 
 ### Python Knowledge List
-
 I won't waste your time, here are the essentials...
 >>>
 Know already
@@ -66,7 +65,19 @@ If you feel ambitious
 ## Assignments
 [See assignments](./assignments)
 
-## Authors and acknowledgment
-Alistair Russell (apr4@sfu.ca)
-Christina Atanasova
+## Collaboration instructions
+Feel free to contribute to the project if you notice any issues or want to add. A basic explanation of how to do this follows...
+1. Ensure you have git installed
+2. Setup a gitlab ssh key - [Link to tutorial](https://www.tutorialspoint.com/gitlab/gitlab_ssh_key_setup.htm)
+3. Clone the repository to your local machine. You can find the url in the "Clone" dropdown button on the repository home page.
+> ```git clone git@gitlab.com:ibkr/bus989.git```
+4. Create a branch to implement your changes eg.
+> ```git checkout -b fix/updating-readme-documentation```
+5. Git add and commit your changes (lookup basic git commands)
+6. Push your changes upstream to add your branch to the remote repository eg. 
+> ```git push origin fix/updating-readme-documentation```
+7. Go to the new branch in gitlab and create a new merge request and add reviewers. This is a mechanism to vet new code that enters the main branch. After the code is reviewed by a maintainer it can be merged!
 
+## Authors and acknowledgment
+- Alistair Russell (apr4@sfu.ca)
+- Christina Atanasova
