@@ -19,18 +19,15 @@ Ensure you have the following:
 There are several tutorials included in this repository that provide some guidance for approaching the course. A general guide would be the following:
 
 **At the start of the course, before any assignments:**
-1. REVIEW Jupyter notebooks operations so that you can quickly build and test code. See [jupyer tutorials](./tutorials/jupyter/).
-2. REVIEW the updated [python slides from BUS721](https://docs.google.com/presentation/d/1-TXA0DzyPfhUgX0kHbccCmKYWVDNgfLjuNQut2L_ZSQ/edit?usp=sharing), and watch this short video on [list comprehension](https://www.youtube.com/watch?v=E1ZAVEmRwyI) here is a rough breakdown of what you should learn/know [Python Knowledge List](#python-knowledge-list)
-3. REVIEW common numpy/pandas operations. (TODO: DATA ANALYSIS TUTORIAL) You do **not** need to memorize every function/method, you just need a general idea of the common use cases so that you have a rough idea of what kind of computations a dataframe does well. This will help you avoid "reinventing the wheel" in the assignments.
-4. SKIM the ib_insync [tutorials](./tutorials/ibkr/) included in this repository. These show common interactions with IBKR. Again, don't memorize, just read through to get the gist of it.
+1. REVIEW Jupyter notebooks operations so that you can quickly build and test code. See [jupyter tutorials](./tutorials/jupyter/).
+2. REVIEW the updated [python intro slides from BUS721](https://docs.google.com/presentation/d/1-TXA0DzyPfhUgX0kHbccCmKYWVDNgfLjuNQut2L_ZSQ/edit?usp=sharing), and watch this short [video on list comprehension](https://www.youtube.com/watch?v=E1ZAVEmRwyI) and review the examples in this [list-comprehension notebook](./tutorials/python/list_comprehension.ipynb) here is a rough breakdown of what you should learn/know [Python Knowledge List](#python-knowledge-list)
+3. REVIEW common numpy/pandas operations. (TODO: DATA ANALYSIS VIDEO TUTORIAL) You do **not** need to memorize every function/method, you just need a general idea of the common use cases so that you have a rough idea of what kind of computations a dataframe does well. This will help you avoid "reinventing the wheel" in the assignments.
+4. SKIM the ib_insync [tutorials](./tutorials/ibkr/) included in this repository. These show common interactions with IBKR using the ib_insync library.
 
 **For each trading assignment**
 1. UNDERSTAND the textbook chapters and paper of the week.
 2. PLAN your approach using comments and docstrings (TODO: PROBLEM SOLVING TUTORIAL)
 3. BUILD your solution (and iterate).
-
-### Environmment Setup
-TODO: add environment setup review
 
 ### Python Knowledge List
 I won't waste your time, here are the essentials...
@@ -49,7 +46,7 @@ Know already
 - Pandas
 
 Learn now
-- List Comprehension (saves a LOT of your time and effort, very easy to read)
+- List Comprehension (saves a LOT of time and effort, makes code very readable)
 - Classes and Object Oriented Programming (not covered in bus721, great for portfolio rebalancing)
 - More numpy
 - More pandas
