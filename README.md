@@ -9,24 +9,25 @@ BUS989 trading assignments make use of common python libraries (e.g. numpy, pand
 ## Getting started
 
 ### START HERE
+
 Ensure you have the following:
 - python3 installed on your machine
 - A free IBKR **paper trading** account
-- An installation of either IB Trader Workstation or IB Gateway
+- An installation of IB Trader Workstation (preferable) or IB Gateway
 - Anaconda-Navigator installation in order to launch Jupyter Lab
 
 There are several tutorials included in this repository that provide some guidance for approaching the course. A general guide would be the following:
 
 **At the start of the course, before any assignments:**
-1. REVIEW Jupyter notebooks operations so that you can quickly build and test code. (TODO: JUPYTER TUTORIAL)
-2. REVIEW the basic python slides from BUS721 (TODO: PYTHON TUTORIAL), and watch this short video on [list comprehension](https://www.youtube.com/watch?v=E1ZAVEmRwyI) here is a rough breakdown of what you should learn/know [Python Knowledge List](#python-knowledge-list)
+1. REVIEW Jupyter notebooks operations so that you can quickly build and test code. See [jupyer tutorials](./tutorials/jupyter/).
+2. REVIEW the updated [python slides from BUS721](https://docs.google.com/presentation/d/1-TXA0DzyPfhUgX0kHbccCmKYWVDNgfLjuNQut2L_ZSQ/edit?usp=sharing), and watch this short video on [list comprehension](https://www.youtube.com/watch?v=E1ZAVEmRwyI) here is a rough breakdown of what you should learn/know [Python Knowledge List](#python-knowledge-list)
 3. REVIEW common numpy/pandas operations. (TODO: DATA ANALYSIS TUTORIAL) You do **not** need to memorize every function/method, you just need a general idea of the common use cases so that you have a rough idea of what kind of computations a dataframe does well. This will help you avoid "reinventing the wheel" in the assignments.
-4. SKIM the ib_insync [tutorials](./tutorials) included in this repository. These show common interactions with IBKR. Again, don't memorize, just read through to get the gist of it.
+4. SKIM the ib_insync [tutorials](./tutorials/ibkr/) included in this repository. These show common interactions with IBKR. Again, don't memorize, just read through to get the gist of it.
 
 **For each trading assignment**
 1. UNDERSTAND the textbook chapters and paper of the week.
 2. PLAN your approach using comments and docstrings (TODO: PROBLEM SOLVING TUTORIAL)
-3. BUILD your solution (and iterate)
+3. BUILD your solution (and iterate).
 
 ### Environmment Setup
 TODO: add environment setup review
@@ -59,13 +60,14 @@ If you feel ambitious
 - Lambda Functions (these are cool)
 >>>
 
-### Jupyter
-[See jupyter tutorials](./tutorials/jupyter)
+### Tutorials
+All tutorials are included in the repository - [See Tutorials](./tutorials/).
+Short video tutorials are included on panopto.
 
 ## Assignments
 [See assignments](./assignments)
 
-## Collaboration instructions
+## Collaboration Instructions (optional - not required for bus989)
 Feel free to contribute to the project if you notice any issues or want to add. A basic explanation of how to do this follows...
 1. Ensure you have git installed
 2. Setup a gitlab ssh key - [Link to tutorial](https://www.tutorialspoint.com/gitlab/gitlab_ssh_key_setup.htm)
