@@ -81,8 +81,12 @@ class SpxOptions:
         # return trade required
         pass
 
-    def sell_mispricing(self):
-        """Sell 10 contracts of the option with the largest mispricing"""
+    def sell_mispricing(self, num_contracts):
+        """Sell contracts of the option with the largest mispricing
+
+        Args:
+            num_contracts (int): the number of contracts to sell
+        """
         pass
 
     def rebalance(self):
