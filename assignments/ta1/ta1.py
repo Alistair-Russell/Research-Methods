@@ -16,14 +16,14 @@ from scipy.stats import norm  # normal cdf
 from ib_insync import *
 
 
-class SpxOptions:
+class SpyDeltaHedge:
     """Class for pricing and hedging of SPX options
 
     Returns:
         obj: object with ib connection established and spx priced
     """
 
-    def __init__(self, url="127.0.0.1", port=4002):
+    def __init__(self, url="127.0.0.1", port=7497, client_id=2):
         """Initialize IB connection and create a contract for the underlying
 
         Args:
@@ -32,15 +32,18 @@ class SpxOptions:
         """
         # ibkr connection
         self.ib = IB()
-        self.ib.connect(url, port, clientId=1)
+        self.ib.connect(url, port, clientId=client_id)
 
         # price the underlying security
-        spx = Index("SPX", "CBOE")
+        spx = Stock("VOO", "SMART", "USD")
         self.ib.qualifyContracts(spx)
         self.ib.reqMarketDataType(4)
         [ticker] = self.ib.reqTickers(spx)
         self.spx_price = ticker.marketPrice()
-        return self.ib
+
+    def __del__(self):
+        """Disconnects the IBKR session before object deletion"""
+        self.ib.disconnect()
 
     def _get_option_contracts(self, rights=["C"]):
         """Fetch SPX options contracts"""
@@ -48,17 +51,15 @@ class SpxOptions:
             self.spx.symbol, "", self.spx.secType, self.spx.conId
         )
         chain = next(
-            c for c in opt_chain if c.tradingClass == "SPX" and c.exchange == "SMART"
+            c for c in opt_chain if c.tradingClass == "VOO" and c.exchange == "SMART"
         )
-        strikes = [
-            strike
-            for strike in chain.strikes
-            if strike % 5 == 0 and spxValue - 20 < strike < spxValue + 20
-        ]
+
+        # filtering lists
+        strikes = [strike for strike in chain.strikes]
         expirations = sorted(exp for exp in chain.expirations)[:2]
 
         contracts = [
-            Option("SPX", expiration, strike, right, "SMART", tradingClass="SPX")
+            Option("VOO", expiration, strike, right, "SMART", tradingClass="VOO")
             for right in rights
             for expiration in expirations
             for strike in strikes
@@ -72,7 +73,10 @@ class SpxOptions:
         Args:
             num_contracts (int): the number of contracts to sell
         """
-        # get option chain
+        # get largest mispricing in option chain
+        contracts = self._get_option_contracts()
+        tickers = self.ib.reqTickers(*contracts)
+
         # contracts = [c for c in self._get_option_contracts]
         # order = MarketOrder("SELL", num_contracts)
         pass
@@ -126,38 +130,57 @@ class SpxOptions:
             bs_delta = None
         return bs_delta
 
-    def _delta_hedge(self):
+    def _delta_hedge(self, sym):
         """Initiate a delta hedge for call options"""
-        # use the delta to determine the amount of stock needed to hedge
-        price = self._bs_delta()
-        delta = self._bs_delta()
-        hedge = delta * 10
+        # get current positions
+        positions = [p for p in self.ib.positions() if p.contract.symbol == sym]
 
-        # calculate the difference between the hedge requirement and the current portfolio
-        positions = [p for p in self.ib.positions()]
+        # ensure that you have an open option position
+        opts = [p for p in positions if p.contract.secType == "OPT"]
+        if not opts:
+            print("No option position to hedge")
+            return (None, None)
+        option = opts[0]
+
+        # use the delta to determine the optimal hedge
+        # TODO:(BLACKSCHOLES IMPLEMENTATION)
+        # delta = self._bs_delta(self.spx_price)
+        delta = option.modelGreeks.delta
+        delta_neutral_pos = -option.position * delta * 100
+
+        # calculate the difference between the hedge requirement and the current position
+        stks = [p for p in positions if p.contract.secType == "STK"]
+        hedge = delta_neutral_pos - stks[0].position
 
         # return contract and order required to remain delta neutral
-        contract = Index("SPX", "CBOE")
+        contract = Stock("VOO", "SMART", "USD")
         order = MarketOrder("BUY", hedge)
         return (contract, order)
 
     def rebalance(self):
         """Rebalance portfolio to remain delta-neutral
-        Runs twice daily
+        Runs daily
         """
-        # price the option with Black-Scholes
+        # get option positions
+        options = [
+            p.contract.symbol
+            for p in self.ib.positions()
+            if p.contract.secType == "OPT"
+        ]
 
-        # calculate the delta hedge trade needed to rebalance
-        contract, order = self._delta_hedge()
+        # calculate the delta hedge trade needed to remain delta-neutral
+        executions = []
+        for opt in options:
+            executions.append(self._delta_hedge(opt))
 
-        # check whether the risk outweighs the transaction cost
-        # ib.whatIfOrder(contract, order)
-        dryrun_order = self.ib.whatIfOrder(contract, order)
-        # if dryrun_order.commission >
+        # TODO:(EXECUTION VALIDATION) check whether the risk outweighs the transaction cost
+        # dryrun = self.ib.whatIfOrder(contract, order)
 
-        # execute the trade to remain delta-neutral
-        trade = self.ib.placeOrder(contract, order)
-        assert order in self.ib.orders()
-        assert trade in self.ib.trades()
-        while not trade.isDone():
-            self.ib.waitOnUpdate()
+        # execute the trades to remain delta-neutral
+        for contract, order in executions:
+            if contract and order:
+                trade = self.ib.placeOrder(contract, order)
+                assert order in self.ib.orders()
+                assert trade in self.ib.trades()
+                while not trade.isDone():
+                    self.ib.waitOnUpdate()
