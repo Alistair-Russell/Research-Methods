@@ -10,7 +10,9 @@ __author__ = "Alistair Russell"
 import datetime as dt
 import numpy as np
 import pandas as pd
-import statsmodels.formula.api as smf
+import pandas_datareader as pdr
+import statsmodels.api as sm
+import itertools as it
 from ib_insync import *
 
 
@@ -219,7 +221,7 @@ class VIXFuturesHedgeAlgo(BaseAlgo):
         beta = self._get_es_beta()
         hedge_amt = round(
             (beta * self.vix_future["ticker"].last * 1000)
-            / (es_price * self.vix_future["contract"].minTick * 100)
+            / (es_price * self.vix_future["contract"].multiplier)
         )
 
         # place hedge trade
@@ -258,3 +260,87 @@ class VIXFuturesHedgeAlgo(BaseAlgo):
             if is_contango_takeprofit or is_backwardation_takeprofit:
                 trade = self.market_order(f.contract, -1 * f.position)
                 # TODO: liquidate the es position
+
+
+class PairsTradingAlgo(BaseAlgo):
+    def __init__(self, start="2021-10-05", end="2022-10-05", **kwargs):
+        super(PairsTradingAlgo, self).__init__(**kwargs)
+
+        # read in formation period data or generate it from historical data
+        try:
+            self.data = pd.read_csv("pairs-data.csv")
+            print("Pairs data found.")
+        except FileNotFoundError:
+            print("Pairs data file not found. generating from historical data.")
+            self.data = self._gen_formation_data(start, end)
+
+    def _universe_selection(self):
+        sp_data = pd.read_html(
+            "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+        )[0]
+        tickers = sp_data.Symbol.to_list()
+        return tickers
+
+    def _form_pairs(self, num_pairs):
+        sorted_pairs = []
+        distances = {}
+        for pair in self.ticker_pairs:
+            distances[pair] = sum(
+                (self.return_data[pair[0]] - self.return_data[pair[1]]) ** 2
+            )
+            sorted_pairs = sorted(distances, key=lambda x: distances[x])[:num_pairs]
+        return sorted_pairs
+
+    def _gen_formation_data(self, start_date, end_date):
+        # get tickers from universe selection
+        self.tickers = self._universe_selection()
+        self.ticker_pairs = list(it.combinations(self.tickers, 2))
+        self.sorted_pairs = None
+
+        panel_data = pdr.DataReader(
+            self.tickers, "yahoo", start=start_date, end=end_date
+        )["Adj Close"]
+
+        # get a price df
+        price_data = pd.DataFrame(panel_data.to_dict())
+
+        # change each column to cumulative returns to get a returns df
+        df = price_data.copy(deep=True)
+        for col in df:
+            df[col] = df[col].pct_change().add(1).cumprod().sub(1)
+        self.return_data = df.tail(252)
+
+        # find 20 pairs with the minimum ssd and filter price data
+        self.sorted_pairs = self._form_pairs(20)
+        unique_tics = list(set([i for tup in self.sorted_pairs for i in tup]))
+
+        # create log price data
+        log_price_data = price_data[unique_tics].tail(252)
+        for col in log_price_data:
+            log_price_data[col] = np.log(log_price_data[col])
+
+        data = pd.DataFrame(
+            columns=["pair", "hedge_ratio", "spread_mean", "spread_std"],
+        )
+        for pair in self.sorted_pairs:
+            # tranform to log prices
+            log_price_0 = log_price_data[pair[0]]
+            log_price_1 = log_price_data[pair[1]]
+
+            # regress log prices on eachother to get the hedge ratio
+            model = sm.OLS(log_price_0, log_price_1).fit()
+            hedge_ratio = model.params[0]
+            spread = np.array(log_price_0 - hedge_ratio * log_price_1)
+            mean = np.mean(spread)
+            std = np.std(spread)
+
+            # add data to dataframe
+            data.loc[len(data.index)] = [pair, hedge_ratio, mean, std]
+
+        # write pairs formation data out to a file adn return data
+        data.to_csv("pairs-data.csv", index=False)
+        return data
+
+    def rebalance():
+        # exit any open pairs traded positions
+        pass
