@@ -263,13 +263,14 @@ class VIXFuturesHedgeAlgo(BaseAlgo):
 
 
 class PairsTradingAlgo(BaseAlgo):
-    def __init__(self, start="2021-10-05", end="2022-10-05", **kwargs):
+    def __init__(self, formation_period=("2021-10-05", "2022-10-05"), **kwargs):
         super(PairsTradingAlgo, self).__init__(**kwargs)
 
         # read in formation period data or generate it from historical data
+        start, end = formation_period
         try:
             self.data = pd.read_csv("pairs-data.csv")
-            print("Pairs data found.")
+            print("Pairs data found in csv file.")
         except FileNotFoundError:
             print("Pairs data file not found. generating from historical data.")
             self.data = self._gen_formation_data(start, end)
@@ -311,7 +312,7 @@ class PairsTradingAlgo(BaseAlgo):
         self.return_data = df.tail(252)
 
         # find 20 pairs with the minimum ssd and filter price data
-        self.sorted_pairs = self._form_pairs(20)
+        self.sorted_pairs = self._form_pairs(50)
         unique_tics = list(set([i for tup in self.sorted_pairs for i in tup]))
 
         # create log price data
@@ -319,6 +320,7 @@ class PairsTradingAlgo(BaseAlgo):
         for col in log_price_data:
             log_price_data[col] = np.log(log_price_data[col])
 
+        # create a df to hold the formation period data we want to keep
         data = pd.DataFrame(
             columns=["pair", "hedge_ratio", "spread_mean", "spread_std"],
         )
@@ -341,6 +343,40 @@ class PairsTradingAlgo(BaseAlgo):
         data.to_csv("pairs-data.csv", index=False)
         return data
 
-    def rebalance():
+    def rebalance(self):
         # exit any open pairs traded positions
-        pass
+        positions = self.positions = [
+            p for p in self.ibconn.positions() if p.contract.secType == "STK"
+        ]
+
+        # for each trading pair, calculate the current spread
+        for index, row in self.data.iterrows():
+            tic1, tic2 = row.pair
+
+            # form contracts for the security pair
+            sec1 = Stock(tic1, "SMART", "USD")
+            sec2 = Stock(tic2, "SMART", "USD")
+            contracts = self.ibconn.qualifyContracts(sec1, sec2)
+            assert sec1 in contracts
+            assert sec2 in contracts
+
+            # price each security and calculate the spread and z-score
+            [p1, p2] = self.ibconn.reqTickers(*contracts)
+            spread = p1.last - row.hedge_ratio * p2.last
+            z_score = (spread - row.spread_mean) / row.spread_std
+
+            filter = [p for p in positions if p.contract.symbol in row.pair]
+
+            # if the szcore is small and positions are open, liquidate them
+            if abs(z_score) < 1 and len(filter) > 0:
+                for stk in filter:
+                    self.market_order(stk.contract, -1 * stk.position)
+
+            # if the zscore exceeds 1 and no positions are open, long the spread
+            elif z_score > 1 and len(filter) == 0:
+                self.market_order(sec1, -10)
+                self.market_order(sec2, 10 * row.hedge_ratio)
+
+            elif z_score < -1 and len(filter) == 0:
+                self.market_order(sec1, 10)
+                self.market_order(sec2, -10 * row.hedge_ratio)
