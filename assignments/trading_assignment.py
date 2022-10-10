@@ -7,6 +7,7 @@ vix futures hedging, and pairs trading.
 __version__ = "0.1"
 __author__ = "Alistair Russell"
 
+from ast import literal_eval
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -37,6 +38,13 @@ class BaseAlgo:
         # ibkr connection
         self.ibconn = IB()
         self.ibconn.connect(url, port, clientId=client_id)
+
+        # account value
+        act = self.ibconn.accountSummary()
+        self.portfolio_val = float(act[19].value)
+
+        # max position size
+        self.max_position = 0.05 * self.portfolio_val
 
     def __del__(self):
         """Disconnects the IBKR session before object deletion"""
@@ -349,34 +357,55 @@ class PairsTradingAlgo(BaseAlgo):
             p for p in self.ibconn.positions() if p.contract.secType == "STK"
         ]
 
+        # set a max portfolio allotment based on the number of positions
+        max_allotment = min(
+            self.portfolio_val / (len(self.data) * 2), self.max_position
+        )
+
         # for each trading pair, calculate the current spread
         for index, row in self.data.iterrows():
-            tic1, tic2 = row.pair
+            pair = literal_eval(row.pair)
+            tic1, tic2 = pair
 
             # form contracts for the security pair
             sec1 = Stock(tic1, "SMART", "USD")
             sec2 = Stock(tic2, "SMART", "USD")
+            self.ibconn.reqMarketDataType(4)
             contracts = self.ibconn.qualifyContracts(sec1, sec2)
             assert sec1 in contracts
             assert sec2 in contracts
 
             # price each security and calculate the spread and z-score
             [p1, p2] = self.ibconn.reqTickers(*contracts)
-            spread = p1.last - row.hedge_ratio * p2.last
+            if (p1.last and p2.last) == False:
+                print(f"Can't find last price for one of {pair}. Skipping.")
+                continue
+
+            spread = np.log(p1.last) - row.hedge_ratio * np.log(p2.last)
             z_score = (spread - row.spread_mean) / row.spread_std
 
-            filter = [p for p in positions if p.contract.symbol in row.pair]
+            filter = [p for p in positions if p.contract.symbol in pair]
+
+            # set the allocation based on the first security
+            allocation = np.floor(max_allotment / p1.last)
 
             # if the szcore is small and positions are open, liquidate them
             if abs(z_score) < 1 and len(filter) > 0:
                 for stk in filter:
+                    print(f"Zscore is {z_score} - closing {pair} positions...")
                     self.market_order(stk.contract, -1 * stk.position)
-
-            # if the zscore exceeds 1 and no positions are open, long the spread
+            # if the zscore exceeds 1 and no positions are open, long or short the spread
             elif z_score > 1 and len(filter) == 0:
-                self.market_order(sec1, -10)
-                self.market_order(sec2, 10 * row.hedge_ratio)
-
+                print(
+                    f"Zscore is {z_score} - shorting {pair} spread with allocation of {allocation}"
+                )
+                self.market_order(sec1, -1 * allocation)
+                self.market_order(sec2, np.floor(allocation * row.hedge_ratio))
             elif z_score < -1 and len(filter) == 0:
-                self.market_order(sec1, 10)
-                self.market_order(sec2, -10 * row.hedge_ratio)
+                print(
+                    f"Zscore is {z_score} - long {pair} spread with allocation of {allocation}"
+                )
+                self.market_order(sec1, allocation)
+                self.market_order(sec2, np.floor(-1 * allocation * row.hedge_ratio))
+            else:
+                print(f"Zscore is {z_score} - no action for {pair} spread...")
