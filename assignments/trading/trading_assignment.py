@@ -133,17 +133,21 @@ class DeltaHedgeAlgo(BaseAlgo):
         self.ibconn.qualifyContracts(self.stk_contract)
 
         # make the market order trade
-        if abs(hedge) > 0:
+        is_close_to_ATM = (delta >= 0.4 or delta <= 0.6) and hedge > 0
+        is_far_from_ATM = (delta < 0.4 or delta > 0.6) and hedge > 10
+        if is_close_to_ATM or is_far_from_ATM:
             trade = self.market_order(self.stk_contract, hedge, dryrun=dryrun)
             if not dryrun:
                 while not trade.isDone():
                     self.ibconn.waitOnUpdate()
             else:
-                print(f"[DRYRUN] trade would have been: {trade}")
+                print(f"[DRYRUN] delta neutral is: SPY {delta_neutral_pos}")
+                print(f"[DRYRUN] trade would have been: SPY {hedge}")
         else:
             print("Already delta-neutral, no trade required.")
 
         # return list of all current positions
+
         return self.ibconn.positions()
 
 
